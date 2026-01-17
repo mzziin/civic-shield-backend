@@ -20,7 +20,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "https://civic-shield-frontend-fzlj.vercel.app",
     credentials: true
   }
 });
@@ -33,7 +33,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: process.env.FRONTEND_URL || "https://civic-shield-frontend-fzlj.vercel.app",
   credentials: true
 }));
 app.use(express.json());
@@ -77,7 +77,7 @@ io.on('connection', (socket) => {
 // Background job: Clean up expired incidents and update danger zones
 cron.schedule('0 * * * *', async () => {
   console.log('Running cleanup job...');
-  
+
   try {
     // Delete expired incidents
     const now = new Date();
@@ -86,10 +86,10 @@ cron.schedule('0 * * * *', async () => {
 
     // Recalculate danger zones
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
+
     // Get all active danger zones
     const activeDangerZones = await DangerZone.find({ isActive: true });
-    
+
     for (const zone of activeDangerZones) {
       // Count incidents in last 24 hours for this city
       const incidentCount = await Incident.countDocuments({
