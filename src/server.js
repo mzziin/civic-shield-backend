@@ -44,7 +44,23 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
 const isProduction = process.env.NODE_ENV === 'production';
+const sessionStore = MongoStore.create({
+  mongoUrl: process.env.MONGODB_URI,
+  touchAfter: 24 * 3600, // Lazy session update (24 hours)
+  autoRemove: 'native' // Use native MongoDB TTL index
+});
+
+// Handle session store errors
+sessionStore.on('error', (error) => {
+  console.error('Session store error:', error);
+});
+
+sessionStore.on('connected', () => {
+  console.log('Session store connected to MongoDB');
+});
+
 app.use(session({
+  name: 'sessionId', // Custom session cookie name
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
@@ -52,12 +68,24 @@ app.use(session({
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax' // 'none' for cross-origin in production, 'lax' for development
+    sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin in production, 'lax' for development
+    path: '/' // Ensure cookie is sent for all paths
   },
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI
-  })
+  store: sessionStore
 }));
+
+// Session debugging middleware (remove in production)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/incidents/report')) {
+    console.log('Session check for /api/incidents/report:', {
+      hasSession: !!req.session,
+      userId: req.session?.userId,
+      sessionID: req.sessionID,
+      cookies: req.headers.cookie ? 'present' : 'missing'
+    });
+  }
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

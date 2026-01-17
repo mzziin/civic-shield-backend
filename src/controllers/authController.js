@@ -80,25 +80,26 @@ const registerHandler = async (req, res) => {
     // Create session
     req.session.userId = user._id.toString();
     
-    // Explicitly save session to ensure it's persisted
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to create session'
-        });
-      }
-      
-      res.json({
-        success: true,
-        message: 'User registered successfully',
-        user: {
-          id: user._id,
-          username: user.username,
-          mobileNumber: user.mobileNumber
+    // Save session and send response
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          reject(err);
+        } else {
+          resolve();
         }
       });
+    });
+    
+    res.json({
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        mobileNumber: user.mobileNumber
+      }
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -139,25 +140,26 @@ const loginHandler = async (req, res) => {
     // Create session
     req.session.userId = user._id.toString();
     
-    // Explicitly save session to ensure it's persisted
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to create session'
-        });
-      }
-      
-      res.json({
-        success: true,
-        message: 'Login successful',
-        user: {
-          id: user._id,
-          username: user.username,
-          mobileNumber: user.mobileNumber
+    // Save session and send response
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          reject(err);
+        } else {
+          resolve();
         }
       });
+    });
+    
+    res.json({
+      success: true,
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        username: user.username,
+        mobileNumber: user.mobileNumber
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -176,7 +178,7 @@ const logoutHandler = (req, res) => {
         message: 'Logout failed'
       });
     }
-    res.clearCookie('connect.sid');
+    res.clearCookie('sessionId'); // Use the custom cookie name
     res.json({
       success: true,
       message: 'Logout successful'
