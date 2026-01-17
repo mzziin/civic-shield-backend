@@ -31,6 +31,9 @@ setIO(io);
 // Connect to database
 connectDB();
 
+// Trust proxy (needed for secure cookies behind reverse proxy)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || "https://civic-shield-frontend-fzlj.vercel.app",
@@ -40,6 +43,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
   resave: false,
@@ -47,7 +51,8 @@ app.use(session({
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production'
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax' // 'none' for cross-origin in production, 'lax' for development
   },
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI
